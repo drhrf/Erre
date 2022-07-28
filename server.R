@@ -1,4 +1,6 @@
-shinyServer(function(input, output) {
+server <- function(input, output, session) {
+
+# shinyServer(function(input, output) {
   
   data <- reactive({
     
@@ -8,7 +10,7 @@ shinyServer(function(input, output) {
     
     if (ext == "xlsx") {
       d <- input$tbl
-      df <- readxl::read_excel(path = d$datapath)
+      df <- readxl::read_excel(path = d$datapath, sheet = input$sheet)
     } else if (ext == "csv") {
       d <- input$tbl
       df <- vroom::vroom(d$datapath, delim = ",")
@@ -28,7 +30,7 @@ shinyServer(function(input, output) {
       df <- as.data.frame(df)
       return(df)
     } else {
-      df <- data()
+      df <- as.data.frame(data())
       return(df)}
     
   })
@@ -51,9 +53,9 @@ shinyServer(function(input, output) {
     descr <- descr[,2:13]
     columns <- colnames(df)
     descr <- cbind(columns, descr)
-    dmelt <- melt(datashowow(), id.vars = 0)
+    dmelt <- melt(df, id.vars = 0)
     dt <- dmelt %>% 
-      group_by(variable) %>% 
+      dplyr::group_by(variable) %>% 
       identify_outliers(value)
     shapiro <- shapiro.test(dmelt$value)
     aov <- stats::aov(data = dmelt, formula = value ~ variable)
@@ -105,19 +107,41 @@ shinyServer(function(input, output) {
     
     df <- datashowow()
     
-    for (i in 1:ncol(df)) {
-      if (is.character(df[[i]])) {
-        a <- 'WARNING: non-numeric data in the file. Please try again.'
-      }
-    }
+    if (is.null(input$tbl)) {
+      a <- 'WELCOME! Fell free to explore the model dataset or upload your own data.'
+    } else {
+      for (i in 1:ncol(df)) {
+        if (is.character(df[[i]])) {
+          a <- 'WARNING: non-numeric data in the file. Please try again.'}
+    }}
     
-    print(a)
+    if (nchar(a) > 1) {
+      print(a)
+    } else {return()}
     
   })
   
   output$currtest <- renderText({
     
-    paste("[ Current comparison: ", input$ttstga, " x ", input$ttstgb, "]")
+    df <- datashowow()
+    
+    A <- names(df)[input$ttstga]
+    
+    B <- names(df)[input$ttstgb]
+    
+    paste("[ Current comparison: ", A, " x ", B, "]")
+    
+  })
+  
+  output$xy <- renderText({
+    
+    df <- datashowow()
+    
+    A <- names(df)[input$ttstga]
+    
+    B <- names(df)[input$ttstgb]
+    
+    paste("[ Current plot: {X}", A, " x {Y}", B, "]")
     
   })
   
@@ -134,12 +158,30 @@ shinyServer(function(input, output) {
       need(input$border != '', 'Please provide a valid BORDER COLOR input.'),
       need(input$brks != '', 'Please provide a valid NUMBER OF BREAKS input.'),
       need(input$density != '', 'Please provide a valid DENSITY LINE COLOR input.'),
-      need(input$nbr != '', 'Please provide a valid COLUMN NUMBER input.')
+      need(input$nbr != '', 'Please provide a valid COLUMN NUMBER input.'),
+      need(input$xannt != '', 'Please provide a valid TEXT POSITION IN X AXIS input.'),
+      need(input$yannt != '', 'Please provide a valid TEXT POSITION IN y AXIS input.'),
+      need(input$txt != '', 'Please provide a valid ANNOTATION input.'),
+      need(input$txtcol != '', 'Please provide a valid ANNOTATION COLOR input.'),
+      need(input$txtsize != '', 'Please provide a valid ANNOTATION SIZE input.')
     )
     
     df <- datashowow()
     dt <- as.data.frame(df[,input$nbr])
+    dt <- drop_na(dt)
     colnames(dt) <- 'col1'
+    
+    if (input$xannt == 0) {
+      xpos <- median(dt$col1)
+    } else {
+      xpos <- input$xannt
+    }
+    
+    if (input$yannt == 0) {
+      ypos <- 0
+    } else {
+      ypos <- input$yannt
+    }
     
     a<-ggplot(data = dt, mapping = aes(x = col1)) + 
       geom_histogram(mapping = aes(y = ..density..),
@@ -150,7 +192,10 @@ shinyServer(function(input, output) {
       theme(panel.background = element_blank(),
             axis.line.y = element_line("black", size = .25), 
             axis.line.x = element_line("black", size = .25)) + 
-      labs(title = input$title, x = input$xlab, y = input$ylab)
+      labs(title = input$title, x = input$xlab, y = input$ylab) +
+      annotate('text', 
+               x=xpos, y=ypos, 
+               label=input$txt, col=input$txtcol, cex=input$txtsize)
     
     a
     
@@ -177,10 +222,28 @@ shinyServer(function(input, output) {
   tukey <- reactive({
     
     validate(
-      need(input$fill != '', 'Please provide a valid FILL COLOR input.'))
+      need(input$fill != '', 'Please provide a valid FILL COLOR input.'), 
+      need(input$xannttu != '', 'Please provide a valid TEXT POSITION IN X AXIS input.'),
+      need(input$yannttu != '', 'Please provide a valid TEXT POSITION IN y AXIS input.'),
+      need(input$txttu != '', 'Please provide a valid ANNOTATION input.'),
+      need(input$txtcoltu != '', 'Please provide a valid ANNOTATION COLOR input.'),
+      need(input$txtsizetu != '', 'Please provide a valid ANNOTATION SIZE input.')
+      )
     
     tkk <- sats()
     tkk <- as.data.frame(tkk[2])
+    
+    if (input$xannttu == 0) {
+      xpos <- 1
+    } else {
+      xpos <- input$xannttu
+    }
+    
+    if (input$yannttu == 0) {
+      ypos <- 0
+    } else {
+      ypos <- input$yannttu
+    }
     
     d<-ggplot(data = tkk) +
       geom_errorbar(aes(x = reorder(x = comparison, -diff), y = diff,
@@ -195,7 +258,11 @@ shinyServer(function(input, output) {
       labs(y = 'Difference (upper/lower CI)',
            x = '',
            title = 'Confidence intervals (Tukey test)') + 
-      coord_flip()
+      coord_flip() +
+      annotate('text', 
+               x=xpos, y=ypos, 
+               label=input$txttu, 
+               col=input$txtcoltu, cex=input$txtsizetu)
     
     d
   
@@ -226,13 +293,31 @@ shinyServer(function(input, output) {
       need(input$border != '', 'Please provide a valid BORDER COLOR input.'),
       need(input$jitter != '', 'Please provide a valid JITTER DOT COLOR input.'),
       need(input$viol != '', 'Please provide a valid VIOLIN PLOT COLOR input.'),
-      need(input$point != '', 'Please provide a valid MEAN DOT COLOR input.')
+      need(input$point != '', 'Please provide a valid MEAN DOT COLOR input.'),
+      need(input$xanntbx != '', 'Please provide a valid TEXT POSITION IN X AXIS input.'),
+      need(input$yanntbx != '', 'Please provide a valid TEXT POSITION IN y AXIS input.'),
+      need(input$txtbx != '', 'Please provide a valid ANNOTATION input.'),
+      need(input$txtcolbx != '', 'Please provide a valid ANNOTATION COLOR input.'),
+      need(input$txtsizebx != '', 'Please provide a valid ANNOTATION SIZE input.')
     )
     
     dmelt <- melt(datashowow(), id.vars = 0)
+    dmelt <- drop_na(dmelt)
     
     dt <- dmelt %>% group_by(variable) %>% 
       summarise(mean = mean(value), sd = sd(value))
+    
+    if (input$xanntbx == 0) {
+      xpos <- 1
+    } else {
+      xpos <- input$xanntbx
+    }
+    
+    if (input$yanntbx == 0) {
+      ypos <- 0
+    } else {
+      ypos <- input$yanntbx
+    }
     
     if (input$ord == 'y') {
       
@@ -241,6 +326,8 @@ shinyServer(function(input, output) {
         geom_violin(fill = NA, col = input$viol) +
         geom_boxplot(fill = input$fill, outlier.shape = NA, 
                      col = input$border) +
+        stat_boxplot(geom = "errorbar",
+                     width = 0.1) +
         geom_jitter(position = position_jitter(0.2),
                     color = input$jitter, 
                     size = .5, 
@@ -253,7 +340,12 @@ shinyServer(function(input, output) {
               axis.line.x = element_line("black", size = .25)) +
         labs(y = input$ylab,
              x = input$xlab, 
-             title = input$title)
+             title = input$title) +
+        annotate('text', 
+                 x=xpos, y=ypos, 
+                 label=input$txtbx, 
+                 col=input$txtcolbx, cex=input$txtsizebx)
+        
       b
       
     } else {
@@ -275,7 +367,12 @@ shinyServer(function(input, output) {
               axis.line.x = element_line("black", size = .25)) +
         labs(y = input$ylab,
              x = input$xlab, 
-             title = input$title)
+             title = input$title) + 
+        annotate('text', 
+                 x=xpos, y=ypos, 
+                 label=input$txtbx, 
+                 col=input$txtcolbx, cex=input$txtsizebx)
+      
       b
     }
     
@@ -308,13 +405,31 @@ shinyServer(function(input, output) {
       need(input$border != '', 'Please provide a valid BORDER COLOR input.'),
       need(input$errcol != '', 'Please provide a valid ERROR BAR COLOR input.'),
       need(input$jitter != '', 'Please provide a valid JITTER DOT COLOR input.'),
-      need(input$point != '', 'Please provide a valid MEAN DOT COLOR input.')
+      need(input$point != '', 'Please provide a valid MEAN DOT COLOR input.'), 
+      need(input$xanntbr != '', 'Please provide a valid TEXT POSITION IN X AXIS input.'),
+      need(input$yanntbr != '', 'Please provide a valid TEXT POSITION IN y AXIS input.'),
+      need(input$txtbr != '', 'Please provide a valid ANNOTATION input.'),
+      need(input$txtcolbr != '', 'Please provide a valid ANNOTATION COLOR input.'),
+      need(input$txtsizebr != '', 'Please provide a valid ANNOTATION SIZE input.')
     )
     
     dmelt <- melt(datashowow(), id.vars = 0)
+    dmelt <- drop_na(dmelt)
     
     dt <- dmelt %>% group_by(variable) %>% 
       summarise(mean = mean(value), sd = sd(value), median = median(value))
+    
+    if (input$xanntbr == 0) {
+      xpos <- 1
+    } else {
+      xpos <- input$xanntbr
+    }
+    
+    if (input$yanntbr == 0) {
+      ypos <- 0
+    } else {
+      ypos <- input$yanntbr
+    }
     
     if (input$ord == 'y') {
       
@@ -346,7 +461,12 @@ shinyServer(function(input, output) {
                     position = position_jitter(0.2),
                     color = input$jitter,
                     size = .5,
-                    shape = 20)
+                    shape = 20) +
+        annotate('text', 
+                 x=xpos, y=ypos, 
+                 label=input$txtbr, 
+                 col=input$txtcolbr, cex=input$txtsizebr)
+      
       c
       
     } else {
@@ -378,7 +498,12 @@ shinyServer(function(input, output) {
                     position = position_jitter(0.2),
                     color = input$jitter,
                     size = .5,
-                    shape = 20)
+                    shape = 20) +
+        annotate('text', 
+                 x=xpos, y=ypos, 
+                 label=input$txtbr, 
+                 col=input$txtcolbr, cex=input$txtsizebr)
+        
       c
     }
     
@@ -410,7 +535,13 @@ shinyServer(function(input, output) {
       need(input$setrue != '', 'Please provide a valid STANDARD ERROR input.'),
       need(input$regcolor != '', 'Please provide a valid REGRESSION LINE COLOR input.'),
       need(input$regtype != '', 'Please provide a valid REGRESSION MODEL input.'),
-      need(input$jitter != '', 'Please provide a valid JITTER DOT COLOR input.'))
+      need(input$jitter != '', 'Please provide a valid JITTER DOT COLOR input.'), 
+      need(input$xanntre != '', 'Please provide a valid TEXT POSITION IN X AXIS input.'),
+      need(input$yanntre != '', 'Please provide a valid TEXT POSITION IN y AXIS input.'),
+      need(input$txtre != '', 'Please provide a valid ANNOTATION input.'),
+      need(input$txtcolre != '', 'Please provide a valid ANNOTATION COLOR input.'),
+      need(input$txtsizere != '', 'Please provide a valid ANNOTATION SIZE input.')
+      )
     
     df <- datashowow()
     x <- df[,input$ttstga]
@@ -419,6 +550,18 @@ shinyServer(function(input, output) {
     colnames(dt) <- c('x', 'y')
     
     setrue <- as.logical(input$setrue)
+    
+    if (input$xanntre == 0) {
+      xpos <- min(dt$x)
+    } else {
+      xpos <- input$xanntre
+    }
+    
+    if (input$yanntre == 0) {
+      ypos <- min(dt$y)
+    } else {
+      ypos <- input$yanntre
+    }
     
     e <- ggplot(data = dt) +
       geom_point(mapping = aes(x = x,
@@ -435,7 +578,11 @@ shinyServer(function(input, output) {
       theme(panel.background = element_blank(),
             axis.line.y = element_line("black", size = .25),
             axis.line.x = element_line("black", size = .25)) +
-      labs(title = input$title, x = input$xlab, y = input$ylab)
+      labs(title = input$title, x = input$xlab, y = input$ylab) + 
+      annotate('text', 
+               x=xpos, y=ypos, 
+               label=input$txtre, 
+               col=input$txtcolre, cex=input$txtsizere)
     
     e
     
@@ -454,6 +601,12 @@ shinyServer(function(input, output) {
   )
   
   output$resgre <- renderTable({
+    
+    regtable()
+    
+  })
+  
+  regtable <- reactive({
     
     df <- datashowow()
     x <- df[,input$ttstga]
@@ -537,6 +690,13 @@ shinyServer(function(input, output) {
     }
     
   })
+  
+  output$downregt <- downloadHandler(
+    filename = function() {"Regression_model.xlsx"},
+    content = function(file) {
+      write.xlsx(file, x = regtable())
+    }
+  )
 
   output$tablehead <- renderTable({
     
@@ -654,4 +814,17 @@ shinyServer(function(input, output) {
     }
   )
     
-})
+# })
+
+
+  output$user_out <- renderPrint({
+    session$userData$user()
+  })
+  
+  observeEvent(input$sign_out, {
+    sign_out_from_shiny()
+    session$reload()
+  })
+}
+
+secure_server(server)

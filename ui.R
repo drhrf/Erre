@@ -1,4 +1,5 @@
-library(shiny)
+# runGitHub("Erre", "drhrf")
+
 library(tidyverse)
 library(gplots)
 library(bslib)
@@ -24,7 +25,9 @@ if(!require(rstatix)) {install.packages("rstatix"); library(rstatix)}
 if(!require(DescTools)) {install.packages("DescTools"); library(DescTools)}
 if(!require(xlsx)) {install.packages("xlsx"); library(xlsx)}
 
-shinyUI(fluidPage(
+ui <- fluidPage(
+
+# shinyUI(fluidPage(
 
   titlePanel(" "), 
   theme = bslib::bs_theme(bootswatch = "minty",  
@@ -43,7 +46,12 @@ shinyUI(fluidPage(
                                    "text/comma-separated-values,text/plain",
                                    ".csv"),
                         buttonLabel = 'Upload',
-                        placeholder = 'No file'), 
+                        placeholder = 'No file'),
+              numericInput(inputId = 'sheet', 
+                           label = 'Sheet number (for .xlsx)', 
+                           value = 1, 
+                           step = 1, 
+                           min = 1),
               numericInput(inputId = "n", 
                            label = "Number of rows", 
                            value = 3, 
@@ -60,7 +68,7 @@ shinyUI(fluidPage(
                                value = 'X'), 
                      textInput(inputId = 'ylab', 
                                label = 'Y axis label (empty for none)', 
-                               value = 'Y'), 
+                               value = 'Y'),
                      textInput(inputId = 'border', 
                                label = 'Border color (NA for none)', 
                                value = 'black'), 
@@ -78,11 +86,11 @@ shinyUI(fluidPage(
                                value = 'y'), 
                      numericInput(inputId = 'width',
                                   label = 'Plot width',
-                                  value = 12, 
+                                  value = 8, 
                                   step = 0.1), 
                      numericInput(inputId = 'height',
                                   label = 'Plot height',
-                                  value = 8, 
+                                  value = 6, 
                                   step = 0.1), 
                      numericInput(inputId = 'resol',
                                   label = 'Plot resolution',
@@ -103,7 +111,25 @@ shinyUI(fluidPage(
                                   step = 5), 
                      textInput(inputId = 'density', 
                                label = 'Density line color (NA for none)', 
-                               value = 'black'), 
+                               value = 'black'),
+                     textInput(inputId = 'txt', 
+                               label = 'Annotation', 
+                               value = 'text'),
+                     textInput(inputId = 'txtcol', 
+                               label = 'Annotation color (NA for none)', 
+                               value = 'NA'),
+                     numericInput(inputId = 'txtsize',
+                                  label = 'Annotation size',
+                                  value = 4,
+                                  step = .5),
+                     numericInput(inputId = 'xannt',
+                                  label = 'Text position in X axis',
+                                  value = 0, 
+                                  step = .1),
+                     numericInput(inputId = 'yannt',
+                                  label = 'Text position in Y axis',
+                                  value = 0, 
+                                  step = .1),
                      downloadButton(outputId = "downhist", 
                                     label = 'Download plot')),
             
@@ -114,7 +140,25 @@ shinyUI(fluidPage(
                                value = 'mean'),
                      textInput(inputId = 'errcol', 
                                label = 'Error bar color (NA for none)', 
-                               value = 'black'), 
+                               value = 'black'),
+                     textInput(inputId = 'txtbr', 
+                               label = 'Annotation', 
+                               value = 'text'),
+                     textInput(inputId = 'txtcolbr', 
+                               label = 'Annotation color (NA for none)', 
+                               value = 'NA'),
+                     numericInput(inputId = 'txtsizebr',
+                                  label = 'Annotation size',
+                                  value = 4,
+                                  step = .5),
+                     numericInput(inputId = 'xanntbr',
+                                  label = 'Text position in X axis',
+                                  value = 0, 
+                                  step = .1),
+                     numericInput(inputId = 'yanntbr',
+                                  label = 'Text position in Y axis',
+                                  value = 0, 
+                                  step = .1),
                      downloadButton(outputId = "downbar", 
                                     label = 'Download plot')),
             
@@ -122,7 +166,25 @@ shinyUI(fluidPage(
                      p(""),
                      textInput(inputId = 'viol', 
                                label = 'Violin color (NA for none)', 
-                               value = 'gray10'), 
+                               value = 'gray10'),
+                     textInput(inputId = 'txtbx', 
+                               label = 'Annotation', 
+                               value = 'text'),
+                     textInput(inputId = 'txtcolbx', 
+                               label = 'Annotation color (NA for none)', 
+                               value = 'NA'),
+                     numericInput(inputId = 'txtsizebx',
+                                  label = 'Annotation size',
+                                  value = 4,
+                                  step = .5),
+                     numericInput(inputId = 'xanntbx',
+                                  label = 'Text position in X axis',
+                                  value = 0, 
+                                  step = .1),
+                     numericInput(inputId = 'yanntbx',
+                                  label = 'Text position in Y axis',
+                                  value = 0, 
+                                  step = .1),
                      downloadButton(outputId = "downbox", 
                                     label = 'Download plot')),
             
@@ -130,7 +192,7 @@ shinyUI(fluidPage(
                      p(""),
                      textInput(inputId = 'regtype', 
                                label = 'Regression model', 
-                               value = 'loess'),
+                               value = 'lm'),
                      textInput(inputId = 'regcolor', 
                                label = 'Regression line color (NA for none)', 
                                value = 'black'),
@@ -144,25 +206,63 @@ shinyUI(fluidPage(
                                   label = 'Point size', 
                                   value = 2, 
                                   step = .1),
+                     textInput(inputId = 'txtre', 
+                               label = 'Annotation', 
+                               value = 'text'),
+                     textInput(inputId = 'txtcolre', 
+                               label = 'Annotation color (NA for none)', 
+                               value = 'NA'),
+                     numericInput(inputId = 'txtsizere',
+                                  label = 'Annotation size',
+                                  value = 4,
+                                  step = .5),
+                     numericInput(inputId = 'xanntre',
+                                  label = 'Text position in X axis',
+                                  value = 0, 
+                                  step = .1),
+                     numericInput(inputId = 'yanntre',
+                                  label = 'Text position in Y axis',
+                                  value = 0, 
+                                  step = .1),
                      downloadButton(outputId = "downreg", 
                                     label = 'Download plot')),
             
             tabPanel("Statistics",
                      p(""),
-                     textInput(inputId = 'ttstga', 
-                               label = 'Group A name (required)', 
-                               value = 'Petal.Length'), 
-                     textInput(inputId = 'ttstgb', 
-                               label = 'Group B name (required)', 
-                               value = 'Petal.Width'),
+                     numericInput(inputId = 'ttstga',
+                                  label = 'Group A (required)',
+                                  value = 1, 
+                                  step = 1, 
+                                  min = 1),
+                     numericInput(inputId = 'ttstgb',
+                                  label = 'Group B (required)',
+                                  value = 2, 
+                                  step = 1, 
+                                  min = 1),
                      numericInput(inputId = 'conflvl',
                                   label = 'Confidence level',
                                   value = .95, 
                                   min = .01, 
                                   max = .99, 
-                                  step = .01), 
-                     downloadButton(outputId = "downtukey", 
-                                    label = 'Download plot')),
+                                  step = .01),
+                     textInput(inputId = 'txttu', 
+                               label = 'Annotation', 
+                               value = 'text'),
+                     textInput(inputId = 'txtcoltu', 
+                               label = 'Annotation color (NA for none)', 
+                               value = 'NA'),
+                     numericInput(inputId = 'txtsizetu',
+                                  label = 'Annotation size',
+                                  value = 4,
+                                  step = .5),
+                     numericInput(inputId = 'xannttu',
+                                  label = 'Text position in X axis',
+                                  value = 0, 
+                                  step = .1),
+                     numericInput(inputId = 'yannttu',
+                                  label = 'Text position in Y axis',
+                                  value = 0, 
+                                  step = .1)),
             
             tabPanel("Help", 
                      p(""), 
@@ -177,11 +277,12 @@ shinyUI(fluidPage(
                               please provide the desired resolution, 
                               height, and width in the 'General' section.")))),
         
-        mainPanel(img(src = "fig.png", height = 120, width = 90),
-                  h3("Data analyzer - Hercules Freitas, Ph.D."),
-                  p("."),
-                  textOutput('text'),
-                  p("."),
+        mainPanel(
+          # h3("Erre data analyzer"),
+          img(src = "logo.png", height = 140, width = 200),
+          p("."),
+          textOutput('text'),
+          p("."),
           
           tabsetPanel(
             tabPanel("Dataframe",
@@ -204,12 +305,16 @@ shinyUI(fluidPage(
                      plotlyOutput('barplot'),
                      p(".")),
             
-            tabPanel("Regression plot", 
-                     p(""),
+            tabPanel("Regression plot",
+                     p("."),
+                     textOutput('xy'),
+                     p("."),
                      plotlyOutput('regres'),
                      p(""),
                      tableOutput('resgre'),
-                     p(".")),
+                     downloadButton(outputId = "downregt", 
+                                    label = 'Download table'),
+                     p("")),
             
             tabPanel("Statistics",
                      p("."),
@@ -240,6 +345,8 @@ shinyUI(fluidPage(
                                     label = 'Download table'),
                      p(""),
                      plotlyOutput('citukey'),
+                     downloadButton(outputId = "downtukey", 
+                                    label = 'Download plot'),
                      p(""),
                      ("Dunnett's test"),
                      p(""),
@@ -247,6 +354,44 @@ shinyUI(fluidPage(
                      downloadButton(outputId = "downtdunnett", 
                                     label = 'Download table'),
                      p(".")))
-        ))
+        )),
+    # )
+# )
+
+
+  fluidRow(
+    column(
+      6,
+      br(),
+      actionButton(
+        "sign_out",
+        "Sign Out",
+        icon = icon("sign-out-alt"),
+        class = "pull-right"
+      )
     )
+    # column(
+    #   12,
+    #   verbatimTextOutput("user_out")
+    # )
+  )
 )
+
+my_custom_sign_in_page <- sign_in_ui_default(
+  button_color = "#006CB5",
+  color = "#006CB5",
+  company_name = "Erre",
+  background_image = "neur.jpg",
+  logo_top = tags$img(
+    src = "logo.png",
+    alt = "Erre Logo I",
+    style = "width: 300px; margin-top: 60px; margin-bottom: 0px;"
+  ))
+
+secure_ui(
+  ui, 
+  sign_in_page_ui = my_custom_sign_in_page
+  )
+
+
+
