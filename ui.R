@@ -1,29 +1,29 @@
 # runGitHub("Erre", "drhrf")
 
-library(tidyverse)
-library(gplots)
-library(bslib)
-library(plotly)
-library(reshape2)
-library(stats)
-library(psych)
-library(kableExtra)
-library(rstatix)
-library(DescTools)
-library(xlsx)
+#library(tidyverse)
+#library(gplots)
+#library(bslib)
+#library(plotly)
+#library(reshape2)
+#library(stats)
+#library(psych)
+#library(kableExtra)
+#library(rstatix)
+#library(DescTools)
+#library(xlsx)
 
-if(!require(shiny)) {install.packages("shiny"); library(shiny)}
-if(!require(tidyverse)) {install.packages("tidyverse"); library(tidyverse)}
-if(!require(gplots)) {install.packages("gplots"); library(gplots)}
-if(!require(bslib)) {install.packages("bslib"); library(bslib)}
-if(!require(plotly)) {install.packages("plotly"); library(plotly)}
-if(!require(reshape2)) {install.packages("reshape2"); library(reshape2)}
-if(!require(stats)) {install.packages("stats"); library(stats)}
-if(!require(psych)) {install.packages("psych"); library(psych)}
-if(!require(kableExtra)) {install.packages("kableExtra"); library(kableExtra)}
-if(!require(rstatix)) {install.packages("rstatix"); library(rstatix)}
-if(!require(DescTools)) {install.packages("DescTools"); library(DescTools)}
-if(!require(xlsx)) {install.packages("xlsx"); library(xlsx)}
+if(require(shiny)) {install.packages("shiny"); library(shiny)}
+if(require(tidyverse)) {install.packages("tidyverse"); library(tidyverse)}
+if(require(gplots)) {install.packages("gplots"); library(gplots)}
+if(require(bslib)) {install.packages("bslib"); library(bslib)}
+if(require(plotly)) {install.packages("plotly"); library(plotly)}
+if(require(reshape2)) {install.packages("reshape2"); library(reshape2)}
+if(require(stats)) {install.packages("stats"); library(stats)}
+if(require(psych)) {install.packages("psych"); library(psych)}
+if(require(kableExtra)) {install.packages("kableExtra"); library(kableExtra)}
+if(require(rstatix)) {install.packages("rstatix"); library(rstatix)}
+if(require(DescTools)) {install.packages("DescTools"); library(DescTools)}
+if(require(xlsx)) {install.packages("xlsx"); library(xlsx)}
 
 shinyUI(fluidPage(
 
