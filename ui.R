@@ -25,9 +25,7 @@ if(!require(rstatix)) {install.packages("rstatix"); library(rstatix)}
 if(!require(DescTools)) {install.packages("DescTools"); library(DescTools)}
 if(!require(xlsx)) {install.packages("xlsx"); library(xlsx)}
 
-ui <- fluidPage(
-
-# shinyUI(fluidPage(
+shinyUI(fluidPage(
 
   titlePanel(" "), 
   theme = bslib::bs_theme(bootswatch = "minty",  
@@ -355,43 +353,4 @@ ui <- fluidPage(
                                     label = 'Download table'),
                      p(".")))
         )),
-    # )
-# )
-
-
-  fluidRow(
-    column(
-      6,
-      br(),
-      actionButton(
-        "sign_out",
-        "Sign Out",
-        icon = icon("sign-out-alt"),
-        class = "pull-right"
-      )
-    )
-    # column(
-    #   12,
-    #   verbatimTextOutput("user_out")
-    # )
-  )
-)
-
-my_custom_sign_in_page <- sign_in_ui_default(
-  button_color = "#006CB5",
-  color = "#006CB5",
-  company_name = "Erre",
-  background_image = "neur.jpg",
-  logo_top = tags$img(
-    src = "logo.png",
-    alt = "Erre Logo I",
-    style = "width: 300px; margin-top: 60px; margin-bottom: 0px;"
-  ))
-
-secure_ui(
-  ui, 
-  sign_in_page_ui = my_custom_sign_in_page
-  )
-
-
-
+))
